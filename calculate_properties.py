@@ -22,21 +22,7 @@ def intersection_point(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2):
     
     return x, y
 
-df = pd.read_csv('DAQ- Crosshead, … - (Timed).csv',header=6,skiprows=[7])
-df.head()
-
-#print(df_al)
-
-###### SAMPLE SIZE ######
-width = 6 # mm
-thickness = 3 # mm
-gauge_length = 25.0 #mm
-A = width*thickness # mm^2
-
-stress_data = (df['Load ']/A)*1000.0 # 1000 * kN / mm^2 -> MPa
-strain_data = df['Extensometer ']/gauge_length # mm/mm
-
-
+# Stress in MPa and strain in mm/mm
 def calculate_properties(stress, strain):
     #Plot full stress strain curve
     fig,ax = plt.subplots()
@@ -48,12 +34,11 @@ def calculate_properties(stress, strain):
     plt.show()
 
     # Find the elastic modulus
-    # use stress and strain values from stress=0 to stress=150 MPa
+    # use stress and strain values from stress=0 to stress=100 MPa
     linear_stress_mask = (stress < 100) & (stress > 0)
     linear_strain_mask = strain < 0.02
     linear_stress = stress[linear_stress_mask & linear_strain_mask]
     linear_strain = strain[linear_stress_mask & linear_strain_mask]
-    print(linear_strain_mask)
 
 
     linear_regression_output = linregress(linear_strain, linear_stress)
@@ -135,6 +120,3 @@ def calculate_properties(stress, strain):
     elongation = 0
 
     return E, Sy, UTS, elongation    
-
-
-calculate_properties(stress_data, strain_data)
