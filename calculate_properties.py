@@ -23,20 +23,28 @@ def intersection_point(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2):
     return x, y
 
 # Stress in MPa and strain in mm/mm
-def calculate_properties(stress, strain):
-    #Plot full stress strain curve
+def calculate_properties(stress, strain, plot=True):
+    strain_array = np.array(strain)
+    stress_array = np.array(stress)
+
+    #Calculate UTS
+    UTS_index = np.argmax(stress_array)
+    UTS = stress_array[UTS_index]
+    UTS_strain = strain_array[UTS_index]
+
+    """ #Plot full stress strain curve
     fig,ax = plt.subplots()
     ax.plot(strain, stress)
     ax.set_xlabel('Strain (mm/mm)')
     ax.set_ylabel('Stress (MPa)')
     ax.set_title('Stress-Strain Curve')
 
-    plt.show()
+    plt.show() """
 
     # Find the elastic modulus
-    # use stress and strain values from stress=0 to stress=100 MPa
-    linear_stress_mask = (stress < 100) & (stress > 0)
-    linear_strain_mask = strain < 0.02
+    # use stress and strain values from stress=0 to stress= 35% of UTS MPa and only at strains < 25% of strain at break
+    linear_stress_mask = (stress < UTS*0.35) & (stress > 0)
+    linear_strain_mask = strain < UTS_strain*0.25
     linear_stress = stress[linear_stress_mask & linear_strain_mask]
     linear_strain = strain[linear_stress_mask & linear_strain_mask]
 
@@ -44,44 +52,13 @@ def calculate_properties(stress, strain):
     linear_regression_output = linregress(linear_strain, linear_stress)
     E = linear_regression_output[0]
 
-    print(f'The elastic modulus is {round(E/1000.0, 2)} GPa')
+    #print(f'The elastic modulus is {round(E/1000.0, 2)} GPa')
 
     # calculate the yield strength
     stress_offset = E*(strain-0.002)
-
-    fig, ax = plt.subplots()
-
-    ax.plot(strain,stress,strain,stress_offset)
-    ax.set_title('Inset of elastic region')
-    ax.set_xlabel('Strain (mm/mm)')
-    ax.set_ylabel('Stress (MPa)')
-    ax.set_ylim([0,300])
-    ax.set_xlim([0,0.01])
-
-    plt.show()
-
-    #calculate yeild strength programatically
     f = np.array(stress)
     g = np.array(stress_offset)
     yield_stress_index = np.argwhere(np.diff(np.sign(f - g)))[0][0]
-    yield_strength = stress[yield_stress_index]
-
-    #fig, ax = plt.subplots()
-
-    #ax.plot(strain,stress)
-    #ax.plot(strain, stress_offset)
-    #ax.plot(strain[yield_stress_index],yield_strength,'go')
-
-    #ax.set_ylim([0,300])
-    #ax.set_xlim([0,0.01])
-
-    #plt.show()
-
-    #print(f'The yield strength found programatically is {round(yield_strength,2)} MPa')
-
-
-    strain_array = np.array(strain)
-    stress_array = np.array(stress)
 
     #calculate yeild strength using the intersection function
     first = yield_stress_index
@@ -98,25 +75,28 @@ def calculate_properties(stress, strain):
     By2 = stress_offset[second]
 
     # run our function that finds the intersection point
-    x, Sy = intersection_point(Ax1,Ay1,Ax2,Ay2,Bx1,By1,Bx2,By2)
+    Sy_strain, Sy = intersection_point(Ax1,Ay1,Ax2,Ay2,Bx1,By1,Bx2,By2)
 
-    #print(x,y)
+    #print(f'The yield strength calculated programmatically is {round(Sy,2)} MPa')
 
-    fig,ax = plt.subplots()
+    if(plot):
+        fig,ax = plt.subplots()
 
+        ax.plot(strain_array,stress_array) #plot stress vs strain
+        ax.plot(strain_array,stress_offset) #plot 2% offset
+        ax.plot(Sy_strain,Sy,'go') #Plot yeild point
+        ax.plot(UTS_strain, UTS, 'ro') #Plot UTS point
 
-    ax.plot(strain_array,stress_array)
-    ax.plot(strain_array,stress_offset)
-    ax.plot(x,Sy,'go')
+        ax.set_xlabel('Strain (mm/mm)')
+        ax.set_ylabel('Stress (MPa)')
+        ax.set_title('Stress-Strain Curve')
 
-    ax.set_ylim([0,300])
-    ax.set_xlim([0,0.01])
+        #ax.set_ylim([0,300])
+        ax.set_ylim([0,UTS*1.1])
+        #ax.set_xlim([0,0.01])
 
-    plt.show()
+        plt.show()
 
-    print(f'The yield strength calculated programmatically is {round(Sy,2)} MPa')
-
-    UTS = 0
-    elongation = 0
+    elongation = UTS_strain #TODO: does not consider ductile faliure
 
     return E, Sy, UTS, elongation    
