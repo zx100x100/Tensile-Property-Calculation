@@ -1,11 +1,20 @@
 from unicodedata import name
 from calculate_properties import calculate_properties
 import pandas as pd
+import numpy as np
 from glob import glob
 
 gauge_length = 25.0 #mm
 
 sample_file = pd.read_excel('../tensile testing.xlsx', 'for python', header=0, skiprows=[1])
+
+#janky but try writing to the file now to make sure it isn't open
+sample_file.to_excel('../tensile testing python results.xlsx')
+
+sample_file['E'] = np.zeros(len(sample_file))
+sample_file['Yeild'] = np.zeros(len(sample_file))
+sample_file['UTS'] = np.zeros(len(sample_file))
+sample_file['elongation'] = np.zeros(len(sample_file))
 
 for index, row in sample_file.iterrows():
     name = row['Name']
@@ -26,3 +35,9 @@ for index, row in sample_file.iterrows():
     print(f'The ultimate tensile strength is {round(UTS, 2)} MPa')
     print(f'The elongation at break is {round(elongation, 3)}')
 
+    sample_file.loc[index, 'E'] = E
+    sample_file.loc[index, 'Yeild'] = Sy
+    sample_file.loc[index, 'UTS'] = UTS
+    sample_file.loc[index, 'elongation'] = elongation
+
+sample_file.to_excel('../tensile testing python results.xlsx')
