@@ -23,7 +23,7 @@ def intersection_point(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2):
     return x, y
 
 # Stress in MPa and strain in mm/mm
-def calculate_properties(stress, strain, plot=True):
+def calculate_properties(stress, strain, plot=True, name=''):
     strain_array = np.array(strain)
     stress_array = np.array(stress)
 
@@ -42,8 +42,8 @@ def calculate_properties(stress, strain, plot=True):
     plt.show() """
 
     # Find the elastic modulus
-    # use stress and strain values from stress=0 to stress= 35% of UTS MPa and only at strains < 25% of strain at break
-    linear_stress_mask = (stress < UTS*0.35) & (stress > 0)
+    # use stress and strain values from stress=0 to stress= 25% + initial offset of UTS MPa and only at strains < 25% of strain at break
+    linear_stress_mask = (stress < (UTS*0.25 + stress[0])) & (stress > 0)
     linear_strain_mask = strain < UTS_strain*0.25
     linear_stress = stress[linear_stress_mask & linear_strain_mask]
     linear_strain = strain[linear_stress_mask & linear_strain_mask]
@@ -53,9 +53,12 @@ def calculate_properties(stress, strain, plot=True):
     E = linear_regression_output[0]
 
     #print(f'The elastic modulus is {round(E/1000.0, 2)} GPa')
+    print("test: ")
+    print(linear_regression_output)
+    print(stress[0])
 
-    # calculate the yield strength
-    stress_offset = E*(strain-0.002)
+    # calculate the yield strength. add offset to acount for non-zero stress at start (strain should be zero)
+    stress_offset = E*(strain-0.002) + stress[0]
     f = np.array(stress)
     g = np.array(stress_offset)
     yield_stress_index = np.argwhere(np.diff(np.sign(f - g)))[0][0]
@@ -83,13 +86,14 @@ def calculate_properties(stress, strain, plot=True):
         fig,ax = plt.subplots()
 
         ax.plot(strain_array,stress_array) #plot stress vs strain
+        ax.plot(linear_strain, linear_stress, 'r')
         ax.plot(strain_array,stress_offset) #plot 2% offset
         ax.plot(Sy_strain,Sy,'go') #Plot yeild point
         ax.plot(UTS_strain, UTS, 'ro') #Plot UTS point
 
         ax.set_xlabel('Strain (mm/mm)')
         ax.set_ylabel('Stress (MPa)')
-        ax.set_title('Stress-Strain Curve')
+        ax.set_title(name + ' Stress-Strain Curve')
 
         #ax.set_ylim([0,300])
         ax.set_ylim([0,UTS*1.1])

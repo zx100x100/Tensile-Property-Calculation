@@ -28,7 +28,7 @@ for index, row in sample_file.iterrows():
 
     stress_data = (test_data['Load ']/area)*1000.0 # 1000 * kN / mm^2 -> MPa
     strain_data = test_data['Extensometer ']/gauge_length # mm/mm
-    E, Sy, UTS, elongation = calculate_properties(stress_data, strain_data, plot=False)
+    E, Sy, UTS, elongation = calculate_properties(stress_data, strain_data, plot=True, name=name)
 
     print(f'The elastic modulus is {round(E/1000.0, 2)} GPa')
     print(f'The yield strength is {round(Sy, 2)} MPa')
